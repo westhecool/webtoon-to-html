@@ -4,6 +4,21 @@
     <title>{{title}}</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta charset="UTF-8">
+    <meta name="description" content="{{summary}}">
+    <meta name="keywords" content="comic, webcomic, manga, chapter list, online comic, {{title}}">
+    <meta name="author" content="{{author}}">
+
+    <!-- Open Graph Metadata -->
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="{{title}}">
+    <meta property="og:description" content="{{summary}}">
+    <meta property="og:image" content="thumbnail.jpg">
+
+    <!-- Twitter Card Metadata -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="{{title}}">
+    <meta name="twitter:description" content="{{summary}}">
+    <meta name="twitter:image" content="thumbnail.jpg">
     <link rel="icon" type="image/jpeg" href="thumbnail.jpg">
     <script type="application/json" id="metadata">{{metadata}}</script>
     <style>
@@ -106,7 +121,7 @@
                     <img src="thumbnail.jpg" id="thumbnail">
                 </div>
                 <div id="info">
-                    <h1 id="title">{{title}}</h1>
+                    <h1 id="title">{{title}} - {{author}}</h1>
                     <p>{{summary}}</p>
                 </div>
             </div>

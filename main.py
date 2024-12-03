@@ -59,7 +59,7 @@ def downloadComic(link):
         author_url = info.find(class_='author')['href']
         author = info.find(class_='author').text.replace('author info', '').strip()
     except:
-        author_url = info.find(class_='author_area').find('a')['href']
+        author_url = None
         author = info.find(class_='author_area').text.replace('author info', '').strip()
     author = re.sub(r'\s{2,}', ' ', author) # remove double spaces
     chapter_page_count = 0
@@ -152,14 +152,19 @@ def downloadComic(link):
                 time.sleep(0.01)
         while running > 0:
             time.sleep(0.01)
-        f = open(f'htmls/chapter.html', 'r')
+        f = open(f'htmls/chapter.html', 'r', encoding='utf-8')
         html = f.read()
         f.close()
         html = html.replace('{{title}}', f'{title} - Chapter {chapter_index}: {chapter["title"]}')
+        html = html.replace('{{author}}', author)
         html = html.replace('{{thumbnail}}', f'chapter_images/{chapter_index}/thumbnail.jpg')
         meta = chapter.copy()
         del meta['thumbnail']
-        meta['number'] = chapter_index
+        meta['chapter_number'] = chapter_index
+        meta['comic_link'] = link
+        meta['comic_title'] = title
+        meta['comic_author'] = author
+        meta['comic_genre'] = genre
         html = html.replace('{{metadata}}', json.dumps(meta))
         content = ''
         for i in range(1, len(imglist)+1):
@@ -173,15 +178,19 @@ def downloadComic(link):
             html = html.replace('{{next}}', f'<a href="{chapter_index+1}.html">Next Chapter &gt;</a>')
         else:
             html = html.replace('{{next}}', '')
-        f = open(f'{args.library}/{make_safe_filename_windows(title)}/{chapter_index}.html', 'w')
+        f = open(f'{args.library}/{make_safe_filename_windows(title)}/{chapter_index}.html', 'w', encoding='utf-8')
         f.write(html)
         f.close()
         print('\n')
 
-    f = open(f'htmls/title.html', 'r')
+
+    print('Writing title/chapter list page...')
+
+    f = open(f'htmls/title.html', 'r', encoding='utf-8')
     html = f.read()
     f.close()
     html = html.replace('{{title}}', title)
+    html = html.replace('{{author}}', author)
     html = html.replace('{{metadata}}', json.dumps({
         'link': link,
         'title': title,
@@ -199,9 +208,11 @@ def downloadComic(link):
     for i in range(1, len(chapters)+1):
         chapters_html += f'<div class="chapter" onclick="window.location.href=\'{i}.html\'" id="chapter-{i}"><img class="chapter-image" src="chapter_images/{i}/thumbnail.jpg"><a href="{i}.html" class="chapter-text"><p>Chapter {i}: {chapters[i-1]["title"]}</p><p class="gray">{chapters[i-1]["date"]}</p></a></div>\n'
     html = html.replace('{{chapters}}', chapters_html)
-    f = open(f'{args.library}/{make_safe_filename_windows(title)}/index.html', 'w')
+    f = open(f'{args.library}/{make_safe_filename_windows(title)}/index.html', 'w', encoding='utf-8')
     f.write(html)
     f.close()
+
+    print('Done!\n')
     
 
 for link in args.link.split(','):
