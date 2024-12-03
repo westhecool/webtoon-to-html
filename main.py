@@ -115,7 +115,7 @@ def downloadComic(link):
     chapter_index = 0
     for chapter in chapters:
         chapter_index += 1
-        if os.path.exists(f'{args.library}/{make_safe_filename_windows(title)}/chapter_images/{chapter_index}'):
+        if os.path.exists(f'{args.library}/{make_safe_filename_windows(title)}/{chapter_index}.html'):
             print(f'Chapter {chapter_index}: {chapter['title']} already downloaded, skipping...')
             print('')
             continue
