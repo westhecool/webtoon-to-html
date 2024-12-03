@@ -27,9 +27,6 @@ def make_safe_filename_windows(filename):
         filename = filename.replace(char, '_')
     return filename
 
-def getNumericIndex(filename:str):
-    return int(filename.split('.')[0])
-
 def downloadComic(link):
     print(f'Link: {link}')
     html = requests.get(link, proxies=proxies, timeout=5).text
@@ -184,8 +181,6 @@ def downloadComic(link):
 
 for link in args.link.split(','):
     def f():
-        global chapter_page_count_total
-        chapter_page_count_total = 0
         try:
             downloadComic(re.sub(r'&page=.*', '', link))
         except Exception as e:
