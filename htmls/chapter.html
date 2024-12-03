@@ -79,6 +79,8 @@
 
         #center {
             width: 100%;
+            display: flex;
+            justify-content: center;
         }
 
         #title {
@@ -89,7 +91,7 @@
 </head>
 
 <body>
-    <center id="center">
+    <div id="center">
         <div id="content">
             <div id="head">
                 <label for="size">Width:</label>
@@ -135,7 +137,7 @@
                 {{next}}
             </div>
         </div>
-    </center>
+    </div>
     <script>
         const center = document.getElementById('center');
         center.onclick = function (event) {

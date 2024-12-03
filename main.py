@@ -34,6 +34,7 @@ def downloadComic(link):
     info = soup.find(class_='info')
     title = info.find(class_='subj').text.strip()
     genre = info.find(class_='genre').text.strip()
+    summary = soup.find(class_='summary').text.strip()
     banner = soup.find(class_='thmb').find('img')['src']
     try:
         thumbnail = soup.find(class_='detail_body').get('style').split('url(')[1].split(')')[0].split('?')[0]
@@ -154,7 +155,7 @@ def downloadComic(link):
         f = open(f'htmls/chapter.html', 'r')
         html = f.read()
         f.close()
-        html = html.replace('{{title}}', title + ' - ' + chapter['title'])
+        html = html.replace('{{title}}', f'{title} - Chapter {chapter_index}: {chapter["title"]}')
         html = html.replace('{{thumbnail}}', f'chapter_images/{chapter_index}/thumbnail.jpg')
         meta = chapter.copy()
         del meta['thumbnail']
@@ -177,7 +178,31 @@ def downloadComic(link):
         f.close()
         print('\n')
 
-    # todo: make index.html for the comic
+    f = open(f'htmls/title.html', 'r')
+    html = f.read()
+    f.close()
+    html = html.replace('{{title}}', title)
+    html = html.replace('{{metadata}}', json.dumps({
+        'link': link,
+        'title': title,
+        'genre': genre,
+        'author': author,
+        'author_link': author_url,
+        'summary': summary,
+        'views': views,
+        'subscribers': subscribers,
+        'rating': rating,
+        'chapters': len(chapters)
+    }))
+    html = html.replace('{{summary}}', summary)
+    chapters_html = ''
+    for i in range(1, len(chapters)+1):
+        chapters_html += f'<div class="chapter" onclick="window.location.href=\'{i}.html\'" id="chapter-{i}"><img class="chapter-image" src="chapter_images/{i}/thumbnail.jpg"><a href="{i}.html" class="chapter-text"><p>Chapter {i}: {chapters[i-1]["title"]}</p><p class="gray">{chapters[i-1]["date"]}</p></a></div>\n'
+    html = html.replace('{{chapters}}', chapters_html)
+    f = open(f'{args.library}/{make_safe_filename_windows(title)}/index.html', 'w')
+    f.write(html)
+    f.close()
+    
 
 for link in args.link.split(','):
     def f():
