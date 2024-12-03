@@ -1,0 +1,152 @@
+<html>
+
+<head>
+    <title>{{title}}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta charset="UTF-8">
+    <link rel="icon" type="image/jpeg" href="{{thumbnail}}">
+    <script type="application/json" id="metadata">{{metadata}}</script>
+    <style>
+        body {
+            font-family: sans-serif;
+            margin: 0;
+            padding: 0;
+            overflow-x: hidden;
+            overflow-y: auto;
+            background-color: white;
+            color: black;
+        }
+
+        .img {
+            width: 100%;
+            margin: 0;
+            padding: 0;
+            pointer-events: none;
+            user-select: none;
+        }
+
+        #content {
+            width: 100%;
+            max-width: 50%;
+        }
+
+        .dark-mode {
+            background-color: #151515;
+            color: white;
+        }
+
+        #head {
+            margin: 5px;
+            background-color: #151515;
+            color: white;
+            border-radius: 5px;
+            width: 100%;
+            height: 2rem;
+            padding: 5px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #size {
+            margin-right: 20px;
+            margin-left: 5px;
+        }
+
+        #dark-mode-toggle-label {
+            margin-right: 20px;
+        }
+
+        #footer {
+            background-color: #151515;
+            color: white;
+            border-radius: 5px;
+            width: 100%;
+            height: 2rem;
+            padding: 5px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 5px;
+        }
+
+        #footer a {
+            color: white;
+            text-decoration: underline;
+            margin-right: 10px;
+            cursor: pointer;
+        }
+
+        #center {
+            width: 100%;
+        }
+
+        #title {
+            color: white;
+            text-decoration: none;
+        }
+    </style>
+</head>
+
+<body>
+    <center id="center">
+        <div id="content">
+            <div id="head">
+                <label for="size">Width:</label>
+                <select id="size">
+                    <option value="100%">100%</option>
+                    <option value="75%">75%</option>
+                    <option selected value="50%">50%</option>
+                    <option value="25%">25%</option>
+                </select>
+                <input type="checkbox" id="dark-mode-toggle"><label id="dark-mode-toggle-label"
+                    for="dark-mode-toggle">Dark Mode</label>
+                <a id="title" href="index.html">{{title}}</a>
+                <script>
+                    const toggleSwitch = document.getElementById('dark-mode-toggle');
+                    toggleSwitch.onchange = function () {
+                        if (toggleSwitch.checked) {
+                            document.body.classList.add('dark-mode');
+                            localStorage.setItem('reader_dark_mode', 'true');
+                        } else {
+                            document.body.classList.remove('dark-mode');
+                            localStorage.setItem('reader_dark_mode', 'false');
+                        }
+                    }
+                    if (localStorage.reader_dark_mode === 'true') {
+                        document.body.classList.add('dark-mode');
+                        toggleSwitch.checked = true;
+                    }
+                    const selectElement = document.getElementById('size');
+                    selectElement.onchange = function () {
+                        const selectedValue = selectElement.value;
+                        document.getElementById('content').style.maxWidth = selectedValue;
+                        localStorage.setItem('reader_width', selectedValue);
+                    }
+                    if (localStorage.reader_width) {
+                        document.getElementById('content').style.maxWidth = localStorage.reader_width;
+                        selectElement.value = localStorage.reader_width;
+                    }
+                </script>
+            </div>
+{{content}}
+            <div id="footer">
+                {{prev}}
+                <a onclick="window.scroll({ top: 0, behavior: 'smooth' });">Back to Top</a>
+                {{next}}
+            </div>
+        </div>
+    </center>
+    <script>
+        const center = document.getElementById('center');
+        center.onclick = function (event) {
+            if (event.target === center) {
+                window.scroll({
+                    top: window.scrollY + (event.x > (window.innerWidth / 2) ? window.innerHeight : -(window.innerHeight))
+                });
+            }
+        }
+    </script>
+</body>
+
+</html>

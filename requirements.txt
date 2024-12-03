@@ -1,0 +1,4 @@
+requests
+requests[socks]
+beautifulsoup4
+pillow
