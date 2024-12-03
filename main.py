@@ -116,10 +116,10 @@ def downloadComic(link):
     for chapter in chapters:
         chapter_index += 1
         if os.path.exists(f'{args.library}/{make_safe_filename_windows(title)}/{chapter_index}.html'):
-            print(f'Chapter {chapter_index}: {chapter['title']} already downloaded, skipping...')
+            print(f'Chapter {chapter_index}: {chapter["title"]} already downloaded, skipping...')
             print('')
             continue
-        print(f'Downloading chapter {chapter_index}: {chapter['title']}')
+        print(f'Downloading chapter {chapter_index}: {chapter["title"]}')
         os.makedirs(f'{args.library}/{make_safe_filename_windows(title)}/chapter_images/{chapter_index}')
         r = requests.get(chapter['thumbnail'], headers={'Referer': link}, proxies=proxies, timeout=5)
         image = Image.open(io.BytesIO(r.content))
