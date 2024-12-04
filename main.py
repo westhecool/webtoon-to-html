@@ -24,7 +24,7 @@ if args.proxy:
 def make_safe_filename_windows(filename):
     illegal_chars = r'<>:"/\|?*'
     for char in illegal_chars:
-        filename = filename.replace(char, '_')
+        filename = filename.replace(char, '')
     return filename
 
 def downloadComic(link):
