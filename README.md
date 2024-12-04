@@ -28,3 +28,4 @@ The input **must** be a link to the chapter list of the webtoon series. Please d
 - [ ] More metadata
 - [ ] Possibly better ui for the offline html files
 - [ ] Figure out how to download background music from webtoons
+- [ ] Add functions to automatically/manually update new chapters to local library
