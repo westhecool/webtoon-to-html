@@ -120,7 +120,7 @@ def downloadComic(link):
             print('')
             continue
         print(f'Downloading chapter {chapter_index}: {chapter["title"]}')
-        os.makedirs(f'{args.library}/{make_safe_filename_windows(title)}/chapter_images/{chapter_index}')
+        os.makedirs(f'{args.library}/{make_safe_filename_windows(title)}/chapter_images/{chapter_index}', exist_ok=True)
         r = requests.get(chapter['thumbnail'], headers={'Referer': link}, proxies=proxies, timeout=5)
         image = Image.open(io.BytesIO(r.content))
         image = image.convert('RGB')
