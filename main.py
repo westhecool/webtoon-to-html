@@ -96,8 +96,11 @@ def downloadComic(link):
             if i > chapter_page_count_total: # if the current page number is higher than the total number of pages, update the total
                 chapter_page_count_total = i
         for chapter in soup.find_all('li', class_='_episodeItem'):
+            ctitle = chapter.find(class_='subj').text.strip()
+            if ctitle.endswith('BGM'): # This happens if the chapter includes background music
+                ctitle = ctitle[:-3].strip()
             chapters.append({
-                'title': chapter.find(class_='subj').text.strip(), 
+                'title': ctitle, 
                 'link': chapter.find('a')['href'],
                 'thumbnail': chapter.find('img')['src'].split('?type=')[0],
                 'date': chapter.find(class_='date').text.strip(),
