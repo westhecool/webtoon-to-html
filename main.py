@@ -32,7 +32,7 @@ def downloadComic(link):
     html = requests.get(link, proxies=proxies, timeout=5).text
     soup = BeautifulSoup(html, 'html.parser')
     info = soup.find(class_='info')
-    title = info.find(class_='subj').text.strip()
+    title = info.find(class_='subj').encode_contents().decode('utf-8').replace('<br>', ' ').replace('<br/>', ' ').strip() # Fix for titles with newlines (<br>)
     genre = info.find(class_='genre').text.strip()
     summary = soup.find(class_='summary').text.strip()
     banner = soup.find(class_='thmb').find('img')['src']
