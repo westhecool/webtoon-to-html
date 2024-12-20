@@ -119,42 +119,44 @@ def downloadComic(link):
     for chapter in chapters:
         chapter_index += 1
         if os.path.exists(f'{args.library}/{make_safe_filename_windows(title)}/{chapter_index}.html'):
-            print(f'Chapter {chapter_index}: {chapter["title"]} already downloaded, skipping...')
+            print(f'Chapter {chapter_index}: {chapter["title"]} already downloaded, skipping redownload...')
             print('')
-            continue
-        print(f'Downloading chapter {chapter_index}: {chapter["title"]}')
-        os.makedirs(f'{args.library}/{make_safe_filename_windows(title)}/chapter_images/{chapter_index}', exist_ok=True)
-        r = requests.get(chapter['thumbnail'], headers={'Referer': link}, proxies=proxies, timeout=5)
-        image = Image.open(io.BytesIO(r.content))
-        image = image.convert('RGB')
-        image.save(f'{args.library}/{make_safe_filename_windows(title)}/chapter_images/{chapter_index}/thumbnail.jpg', quality=90)
-        html = requests.get(chapter['link'], proxies=proxies, timeout=5).text
-        soup = BeautifulSoup(html, 'html.parser')
-        imglist = soup.find(id='_imageList').findChildren('img')
-        i = 0
-        running = 0
-        for img in imglist:
-            i += 1
-            print(f'\rDownloading image {i}/{len(imglist)}', end='')
-            def get(url, index):
-                nonlocal running
-                try:
-                    img = requests.get(url, headers={'Referer': link}, proxies=proxies, timeout=5).content
-                    image = Image.open(io.BytesIO(img))
-                    image = image.convert('RGB')
-                    image.save(f'{args.library}/{make_safe_filename_windows(title)}/chapter_images/{chapter_index}/{index}.jpg', quality=90)
-                    running -= 1
-                except Exception as e:
-                    print(e)
-                    print('Retrying in 1 second...')
-                    time.sleep(1)
-                    get(url, index)
-            running += 1
-            threading.Thread(target=get, args=(str(img['data-url']), int(i))).start()
-            while running >= args.threads:
+        else:
+            print(f'Downloading chapter {chapter_index}: {chapter["title"]}')
+            os.makedirs(f'{args.library}/{make_safe_filename_windows(title)}/chapter_images/{chapter_index}', exist_ok=True)
+            r = requests.get(chapter['thumbnail'], headers={'Referer': link}, proxies=proxies, timeout=5)
+            image = Image.open(io.BytesIO(r.content))
+            image = image.convert('RGB')
+            image.save(f'{args.library}/{make_safe_filename_windows(title)}/chapter_images/{chapter_index}/thumbnail.jpg', quality=90)
+            html = requests.get(chapter['link'], proxies=proxies, timeout=5).text
+            soup = BeautifulSoup(html, 'html.parser')
+            imglist = soup.find(id='_imageList').findChildren('img')
+            i = 0
+            running = 0
+            for img in imglist:
+                i += 1
+                print(f'\rDownloading image {i}/{len(imglist)}', end='')
+                def get(url, index):
+                    nonlocal running
+                    try:
+                        img = requests.get(url, headers={'Referer': link}, proxies=proxies, timeout=5).content
+                        image = Image.open(io.BytesIO(img))
+                        image = image.convert('RGB')
+                        image.save(f'{args.library}/{make_safe_filename_windows(title)}/chapter_images/{chapter_index}/{index}.jpg', quality=90)
+                        running -= 1
+                    except Exception as e:
+                        print(e)
+                        print('Retrying in 1 second...')
+                        time.sleep(1)
+                        get(url, index)
+                running += 1
+                threading.Thread(target=get, args=(str(img['data-url']), int(i))).start()
+                while running >= args.threads:
+                    time.sleep(0.01)
+            while running > 0:
                 time.sleep(0.01)
-        while running > 0:
-            time.sleep(0.01)
+            print('\n')
+        # Update the html anyways
         f = open(f'htmls/chapter.html', 'r', encoding='utf-8')
         html = f.read()
         f.close()
@@ -170,7 +172,7 @@ def downloadComic(link):
         meta['comic_genre'] = genre
         html = html.replace('{{metadata}}', json.dumps(meta))
         content = ''
-        for i in range(1, len(imglist)+1):
+        for i in range(1, len(os.listdir(f'{args.library}/{make_safe_filename_windows(title)}/chapter_images/{chapter_index}'))): # No need to add 1 to the length because of the thumbnail file
             content += f'<img src="chapter_images/{chapter_index}/{i}.jpg" class="img">\n'
         html = html.replace('{{content}}', content)
         if chapter_index > 1:
@@ -184,8 +186,6 @@ def downloadComic(link):
         f = open(f'{args.library}/{make_safe_filename_windows(title)}/{chapter_index}.html', 'w', encoding='utf-8')
         f.write(html)
         f.close()
-        print('\n')
-
 
     print('Writing title/chapter list page...')
 
