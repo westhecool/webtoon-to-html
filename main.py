@@ -1,5 +1,6 @@
 from bs4 import BeautifulSoup
 import os
+import sys
 import json
 import time
 import requests
@@ -11,11 +12,14 @@ from PIL import Image
 
 args = argparse.ArgumentParser()
 args.description = 'Download and convert a whole webtoon series to html files.'
-args.add_argument('link', help='Link to webtoon comic to download. (This should be the link to chapter list.)', type=str)
-args.add_argument('--proxy', help='Proxy to use', type=str, default="")
-args.add_argument('--threads', help='How many threads to use when downloading. (Default: 10)', type=int, default=10)
-args.add_argument('--library', help='Directory to store downloaded comics in. (Default: ./library)', type=str, default="./library")
+args.add_argument('command', help='Link(s) to webtoon comic(s) to download. (This should be the link to chapter list.) to download OR a command to run. Available commands: update-all (updates all comics in the library.)', nargs='+', type=str)
+args.add_argument('-p', '--proxy', help='Proxy to use', type=str, default="")
+args.add_argument('-r', '--max-retries', help='How many times to retry failed downloads. (Default: 10)', type=int, default=10)
+args.add_argument('-t', '--threads', help='How many threads to use when downloading. (Default: 10)', type=int, default=10)
+args.add_argument('-l', '--library', help='Directory to store downloaded comics in. (Default: ./library)', type=str, default="./library")
 args = args.parse_args()
+
+LIBRARY_DIR = os.path.realpath(args.library)
 
 proxies = {}
 if args.proxy:
@@ -35,14 +39,17 @@ def downloadComic(link):
     title = info.find(class_='subj').encode_contents().decode('utf-8').replace('<br>', ' ').replace('<br/>', ' ').strip() # Fix for titles with newlines (<br>)
     genre = info.find(class_='genre').text.strip()
     summary = soup.find(class_='summary').text.strip()
-    banner = soup.find(class_='thmb').find('img')['src']
+    banner = soup.find(class_='thmb').find('img')['src'].split('?')[0]
+    banner_background = None
     try:
-        thumbnail = soup.find(class_='detail_body').get('style').split('url(')[1].split(')')[0].split('?')[0]
+        banner_background = soup.find(class_='detail_bg').get('style').split('url(')[1].split(')')[0].split('?')[0]
+        if banner_background.startswith("'"):
+            banner_background = banner_background[1:]
+        if banner_background.endswith("'"):
+            banner_background = banner_background[:-1]
     except:
-        thumbnail = None
-    if not thumbnail: # Most likely the banner is actually the thumbnail
-        thumbnail = banner
-        banner = None
+        pass # No banner background
+    thumbnail = soup.find('meta', property='og:image').get('content')
     views = None
     subscribers = None
     rating = None
@@ -63,24 +70,29 @@ def downloadComic(link):
         author = info.find(class_='author_area').text.replace('author info', '').strip()
     author = re.sub(r'\s{2,}', ' ', author) # remove double spaces
     chapter_page_count = 0
-    chapter_page_count_total = len(soup.find(class_='paginate').findChildren('a'))
+    chapter_page_count_total = len(soup.find(class_='paginate').find_all('a'))
 
     print(f'Title: {title}')
     print(f'Genre: {genre}')
     print(f'Author: {author}')
 
-    os.makedirs(f'{args.library}/{make_safe_filename_windows(title)}', exist_ok=True)
+    os.makedirs(f'{LIBRARY_DIR}/{make_safe_filename_windows(title)}', exist_ok=True)
 
     if banner:
         r = requests.get(banner, headers={'Referer': link}, proxies=proxies, timeout=5)
         image = Image.open(io.BytesIO(r.content))
         image = image.convert('RGBA')
-        image.save(f'{args.library}/{make_safe_filename_windows(title)}/banner.png', quality=90)
+        image.save(f'{LIBRARY_DIR}/{make_safe_filename_windows(title)}/banner.png', quality=90)
+    if banner_background:
+        r = requests.get(banner_background, headers={'Referer': link}, proxies=proxies, timeout=5)
+        image = Image.open(io.BytesIO(r.content))
+        image = image.convert('RGB')
+        image.save(f'{LIBRARY_DIR}/{make_safe_filename_windows(title)}/banner_background.jpg', quality=90)
     if thumbnail:
         r = requests.get(thumbnail, headers={'Referer': link}, proxies=proxies, timeout=5)
         image = Image.open(io.BytesIO(r.content))
         image = image.convert('RGB')
-        image.save(f'{args.library}/{make_safe_filename_windows(title)}/thumbnail.jpg', quality=90)
+        image.save(f'{LIBRARY_DIR}/{make_safe_filename_windows(title)}/thumbnail.jpg', quality=90)
 
     chapters = []
     while chapter_page_count < chapter_page_count_total:
@@ -88,7 +100,7 @@ def downloadComic(link):
         print(f'\rFetching chapters from page {chapter_page_count}/{chapter_page_count_total}', end='')
         html = requests.get(f'{link}&page={chapter_page_count}', proxies=proxies, timeout=5).text
         soup = BeautifulSoup(html, 'html.parser')
-        for l in soup.find(class_='paginate').findChildren('a'):
+        for l in soup.find(class_='paginate').find_all('a'):
             i = re.sub(r'.*&page=', '', l['href'])
             if i == '#': # this is the page we are currently on
                 continue
@@ -102,7 +114,7 @@ def downloadComic(link):
             chapters.append({
                 'title': ctitle, 
                 'link': chapter.find('a')['href'],
-                'thumbnail': chapter.find('img')['src'].split('?type=')[0],
+                'thumbnail': chapter.find('img')['src'].split('?')[0],
                 'date': chapter.find(class_='date').text.strip(),
                 'likes': chapter.find(class_='like_area').text.replace('like', '').strip(),
             })
@@ -118,19 +130,19 @@ def downloadComic(link):
     chapter_index = 0
     for chapter in chapters:
         chapter_index += 1
-        if os.path.exists(f'{args.library}/{make_safe_filename_windows(title)}/{chapter_index}.html'):
+        if os.path.exists(f'{LIBRARY_DIR}/{make_safe_filename_windows(title)}/{chapter_index}.html'):
             print(f'Chapter {chapter_index}: {chapter["title"]} already downloaded, skipping redownload...')
             print('')
         else:
             print(f'Downloading chapter {chapter_index}: {chapter["title"]}')
-            os.makedirs(f'{args.library}/{make_safe_filename_windows(title)}/chapter_images/{chapter_index}', exist_ok=True)
+            os.makedirs(f'{LIBRARY_DIR}/{make_safe_filename_windows(title)}/chapter_images/{chapter_index}', exist_ok=True)
             r = requests.get(chapter['thumbnail'], headers={'Referer': link}, proxies=proxies, timeout=5)
             image = Image.open(io.BytesIO(r.content))
             image = image.convert('RGB')
-            image.save(f'{args.library}/{make_safe_filename_windows(title)}/chapter_images/{chapter_index}/thumbnail.jpg', quality=90)
+            image.save(f'{LIBRARY_DIR}/{make_safe_filename_windows(title)}/chapter_images/{chapter_index}/thumbnail.jpg', quality=90)
             html = requests.get(chapter['link'], proxies=proxies, timeout=5).text
             soup = BeautifulSoup(html, 'html.parser')
-            imglist = soup.find(id='_imageList').findChildren('img')
+            imglist = soup.find(id='_imageList').find_all('img')
             i = 0
             running = 0
             for img in imglist:
@@ -142,15 +154,15 @@ def downloadComic(link):
                         img = requests.get(url, headers={'Referer': link}, proxies=proxies, timeout=5).content
                         image = Image.open(io.BytesIO(img))
                         image = image.convert('RGB')
-                        image.save(f'{args.library}/{make_safe_filename_windows(title)}/chapter_images/{chapter_index}/{index}.jpg', quality=90)
+                        image.save(f'{LIBRARY_DIR}/{make_safe_filename_windows(title)}/chapter_images/{chapter_index}/{index}.jpg', quality=90)
                         running -= 1
                     except Exception as e:
-                        print(e)
-                        print('Retrying in 1 second...')
+                        print(e, file=sys.stderr)
+                        print('Retrying in 1 second...', file=sys.stderr)
                         time.sleep(1)
                         get(url, index)
                 running += 1
-                threading.Thread(target=get, args=(str(img['data-url']), int(i))).start()
+                threading.Thread(target=get, args=(str(img['data-url']).split('?')[0], int(i))).start()
                 while running >= args.threads:
                     time.sleep(0.01)
             while running > 0:
@@ -172,7 +184,7 @@ def downloadComic(link):
         meta['comic_genre'] = genre
         html = html.replace('{{metadata}}', json.dumps(meta))
         content = ''
-        for i in range(1, len(os.listdir(f'{args.library}/{make_safe_filename_windows(title)}/chapter_images/{chapter_index}'))): # No need to add 1 to the length because of the thumbnail file
+        for i in range(1, len(os.listdir(f'{LIBRARY_DIR}/{make_safe_filename_windows(title)}/chapter_images/{chapter_index}'))): # No need to add 1 to the length because of the thumbnail file
             content += f'<img src="chapter_images/{chapter_index}/{i}.jpg" class="img">\n'
         html = html.replace('{{content}}', content)
         if chapter_index > 1:
@@ -183,7 +195,7 @@ def downloadComic(link):
             html = html.replace('{{next}}', f'<a href="{chapter_index+1}.html">Next Chapter &gt;</a>')
         else:
             html = html.replace('{{next}}', '')
-        f = open(f'{args.library}/{make_safe_filename_windows(title)}/{chapter_index}.html', 'w', encoding='utf-8')
+        f = open(f'{LIBRARY_DIR}/{make_safe_filename_windows(title)}/{chapter_index}.html', 'w', encoding='utf-8')
         f.write(html)
         f.close()
 
@@ -211,21 +223,41 @@ def downloadComic(link):
     for i in range(1, len(chapters)+1):
         chapters_html += f'<div class="chapter" onclick="window.location.href=\'{i}.html\'" id="chapter-{i}"><img class="chapter-image" src="chapter_images/{i}/thumbnail.jpg"><a href="{i}.html" class="chapter-text"><p>Chapter {i}: {chapters[i-1]["title"]}</p><p class="gray">{chapters[i-1]["date"]}</p></a></div>\n'
     html = html.replace('{{chapters}}', chapters_html)
-    f = open(f'{args.library}/{make_safe_filename_windows(title)}/index.html', 'w', encoding='utf-8')
+    f = open(f'{LIBRARY_DIR}/{make_safe_filename_windows(title)}/index.html', 'w', encoding='utf-8')
     f.write(html)
     f.close()
 
     print('Done!\n')
-    
 
-for link in args.link.split(','):
+links = []
+if args.command[0] == 'update-all':
+    for file in os.listdir(LIBRARY_DIR):
+        if os.path.isdir(f'{LIBRARY_DIR}/{file}'):
+            f = open(f'{LIBRARY_DIR}/{file}/index.html', 'r')
+            html = BeautifulSoup(f.read(), 'html.parser')
+            f.close()
+            j = json.loads(html.find('script', id='metadata').contents[0])
+            links.append(j['link'])
+else:
+    for link in args.command:
+        for l in link.split(','):
+            links.append(l)
+tries = 0
+for link in links:
+    if 'm.webtoons.com' in link:
+        raise Exception('Mobile version of webtoon links are not supported!')
     def f():
+        global tries
         try:
             downloadComic(re.sub(r'&page=.*', '', link))
         except Exception as e:
-            print('Failed to download comic.')
-            print(e)
-            print('Retrying in 5 seconds...')
+            tries += 1
+            print('Failed to download comic.', file=sys.stderr)
+            print(e, file=sys.stderr)
+            if tries > args.max_retries:
+                print('Retrys exhausted. (' + str(args.max_retries) + ')\n', file=sys.stderr)
+                return
+            print('Retrying in 5 seconds...', file=sys.stderr)
             time.sleep(5)
             f()
     f()
