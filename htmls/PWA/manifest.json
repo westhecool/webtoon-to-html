@@ -1,7 +1,7 @@
 {
   "name": "Webtoons Library",
   "short_name": "Webtoons Library",
-  "start_url": "/",
+  "start_url": ".",
   "display": "fullscreen",
   "background_color": "#000000",
   "theme_color": "#000000",
