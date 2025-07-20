@@ -4,21 +4,22 @@
     <title>Webtoons Title Listing</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta charset="UTF-8">
-    <meta name="description" content="A list of all downloaded webtoons titles.">
+    <meta name="description" content="A list of all Webtoons titles in the library.">
     <meta name="keywords" content="comic, webcomic, manga, title list, online comic">
 
     <!-- Open Graph Metadata -->
     <meta property="og:type" content="website">
     <meta property="og:title" content="Webtoons Title Listing">
-    <meta property="og:description" content="A list of all downloaded webtoons titles.">
+    <meta property="og:description" content="A list of all Webtoons titles in the library.">
     <meta property="og:image" content="webtoons.png">
 
     <!-- Twitter Card Metadata -->
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="Webtoons Title Listing">
-    <meta name="twitter:description" content="A list of all downloaded webtoons titles.">
+    <meta name="twitter:description" content="A list of all Webtoons titles in the library.">
     <meta name="twitter:image" content="webtoons.png">
     <link rel="icon" type="image/jpeg" href="webtoons.png">
+    <link rel="manifest" href="manifest.json" />
     <script type="application/json" id="metadata">{{metadata}}</script>
     <style>
         body {
@@ -119,6 +120,11 @@
         </div>
     </div>
     </div>
+    <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('service-worker.js');
+        }
+    </script>
 </body>
 
 </html>

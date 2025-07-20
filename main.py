@@ -1,5 +1,6 @@
 from bs4 import BeautifulSoup
 import os
+import shutil
 import sys
 import json
 import time
@@ -265,6 +266,10 @@ def makeTitlesList():
     f.close()
     img = Image.open(f'{SCRIPT_DIR}/htmls/webtoons.png')
     img.save(f'{LIBRARY_DIR}/webtoons.png', quality=90)
+    # Copy all files for PWA
+    for f in os.listdir(f'{SCRIPT_DIR}/htmls/PWA'):
+        if os.path.isfile(f'{SCRIPT_DIR}/htmls/PWA/{f}'):
+            shutil.copy(f'{SCRIPT_DIR}/htmls/PWA/{f}', f'{LIBRARY_DIR}/{f}')
 
 links = []
 if args.command[0] == 'update-all':
