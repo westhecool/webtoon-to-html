@@ -20,6 +20,10 @@ args.add_argument('-l', '--library', help='Directory to store downloaded comics 
 args = args.parse_args()
 
 LIBRARY_DIR = os.path.realpath(args.library)
+SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
+
+if not os.path.exists(LIBRARY_DIR):
+    os.mkdir(LIBRARY_DIR)
 
 proxies = {}
 if args.proxy:
@@ -169,7 +173,7 @@ def downloadComic(link):
                 time.sleep(0.01)
             print('\n')
         # Update the html anyways
-        f = open(f'htmls/chapter.html', 'r', encoding='utf-8')
+        f = open(f'{SCRIPT_DIR}/htmls/chapter.html', 'r', encoding='utf-8')
         html = f.read()
         f.close()
         html = html.replace('{{title}}', f'{title} - Chapter {chapter_index}: {chapter["title"]}')
@@ -201,7 +205,7 @@ def downloadComic(link):
 
     print('Writing title/chapter list page...')
 
-    f = open(f'htmls/title.html', 'r', encoding='utf-8')
+    f = open(f'{SCRIPT_DIR}/htmls/title.html', 'r', encoding='utf-8')
     html = f.read()
     f.close()
     html = html.replace('{{title}}', title)
