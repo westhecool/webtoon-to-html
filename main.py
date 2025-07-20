@@ -3,6 +3,7 @@ import os
 import sys
 import json
 import time
+import urllib.parse
 import requests
 import re
 import argparse
@@ -177,6 +178,7 @@ def downloadComic(link):
         html = f.read()
         f.close()
         html = html.replace('{{title}}', f'{title} - Chapter {chapter_index}: {chapter["title"]}')
+        html = html.replace('{{main_title}}', f'<a id="title-link" href="index.html">{title}</a> &#x2013; Chapter {chapter_index}: {chapter["title"]}')
         html = html.replace('{{author}}', author)
         html = html.replace('{{thumbnail}}', f'chapter_images/{chapter_index}/thumbnail.jpg')
         meta = chapter.copy()
@@ -192,11 +194,11 @@ def downloadComic(link):
             content += f'<img src="chapter_images/{chapter_index}/{i}.jpg" class="img">\n'
         html = html.replace('{{content}}', content)
         if chapter_index > 1:
-            html = html.replace('{{prev}}', f'<a href="{chapter_index-1}.html">&lt; Previous Chapter</a>')
+            html = html.replace('{{prev}}', f'<a href="{chapter_index-1}.html">&lt;&#x2013; Previous Chapter</a>')
         else:
             html = html.replace('{{prev}}', '')
         if chapter_index < len(chapters):
-            html = html.replace('{{next}}', f'<a href="{chapter_index+1}.html">Next Chapter &gt;</a>')
+            html = html.replace('{{next}}', f'<a href="{chapter_index+1}.html">Next Chapter &#x2013;&gt;</a>')
         else:
             html = html.replace('{{next}}', '')
         f = open(f'{LIBRARY_DIR}/{make_safe_filename_windows(title)}/{chapter_index}.html', 'w', encoding='utf-8')
@@ -233,6 +235,37 @@ def downloadComic(link):
 
     print('Done!\n')
 
+def makeTitlesList():
+    titles = ''
+    titles_meta = []
+    i = 0
+    for file in os.listdir(LIBRARY_DIR):
+        if os.path.isdir(f'{LIBRARY_DIR}/{file}'):
+            f = open(f'{LIBRARY_DIR}/{file}/index.html', 'r')
+            html = BeautifulSoup(f.read(), 'html.parser')
+            f.close()
+            j = json.loads(html.find('script', id='metadata').contents[0])
+            titles += f'<div class="title" onclick="window.location.href=\'{urllib.parse.quote(file)}/index.html\'" id="title-{i}"><img class="title-image" src="{urllib.parse.quote(file)}/thumbnail.jpg"><a href="{urllib.parse.quote(file)}/index.html" class="title-text"><p>{j["title"]}</p><p class="gray">{j["author"]}</p></a></div>\n'
+            titles_meta.append({
+                'title': j['title'],
+                'author': j['author'],
+                'genre': j['genre'],
+                'chapters': j['chapters'],
+                'id': i,
+                'path': file
+            })
+            i = i + 1
+    f = open(f'{SCRIPT_DIR}/htmls/titles.html', 'r', encoding='utf-8')
+    html = f.read()
+    f.close()
+    html = html.replace('{{metadata}}', titles)
+    html = html.replace('{{titles}}', titles)
+    f = open(f'{LIBRARY_DIR}/index.html', 'w', encoding='utf-8')
+    f.write(html)
+    f.close()
+    img = Image.open(f'{SCRIPT_DIR}/htmls/webtoons.png')
+    img.save(f'{LIBRARY_DIR}/webtoons.png', quality=90)
+
 links = []
 if args.command[0] == 'update-all':
     for file in os.listdir(LIBRARY_DIR):
@@ -265,3 +298,6 @@ for link in links:
             time.sleep(5)
             f()
     f()
+print('Updating title list...')
+makeTitlesList()
+print('Done!')

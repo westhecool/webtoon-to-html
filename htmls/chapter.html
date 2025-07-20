@@ -98,14 +98,17 @@
             justify-content: center;
         }
 
-        #title {
+        #title-link {
+            text-decoration: underline;
+            cursor: pointer;
             color: white;
-            text-decoration: none;
+            margin: 0;
+            padding: 0;
         }
     </style>
 </head>
 
-<body>
+<body class="dark-mode">
     <div id="center">
         <div id="content">
             <div id="head">
@@ -116,8 +119,8 @@
                     <option selected value="50%">50%</option>
                     <option value="25%">25%</option>
                 </select>
-                <input type="checkbox" id="dark-mode-toggle"><label id="dark-mode-toggle-label" for="dark-mode-toggle">Dark Mode</label>
-                <a id="title" href="index.html">{{title}}</a>
+                <input type="checkbox" id="dark-mode-toggle" checked><label id="dark-mode-toggle-label" for="dark-mode-toggle" >Dark Mode</label>
+                <span>{{main_title}}</span>
                 <script>
                     const toggleSwitch = document.getElementById('dark-mode-toggle');
                     toggleSwitch.onchange = function () {
@@ -129,9 +132,9 @@
                             localStorage.setItem('reader_dark_mode', 'false');
                         }
                     }
-                    if (localStorage.reader_dark_mode === 'true') {
-                        document.body.classList.add('dark-mode');
-                        toggleSwitch.checked = true;
+                    if (localStorage.reader_dark_mode === 'false') {
+                        document.body.classList.remove('dark-mode');
+                        toggleSwitch.checked = false;
                     }
                     const selectElement = document.getElementById('size');
                     selectElement.onchange = function () {

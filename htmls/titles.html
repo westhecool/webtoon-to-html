@@ -1,25 +1,24 @@
 <html>
 
 <head>
-    <title>{{title}}</title>
+    <title>Webtoons Title Listing</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta charset="UTF-8">
-    <meta name="description" content="{{summary}}">
-    <meta name="keywords" content="comic, webcomic, manga, chapter list, online comic, {{title}}">
-    <meta name="author" content="{{author}}">
+    <meta name="description" content="A list of all downloaded webtoons titles.">
+    <meta name="keywords" content="comic, webcomic, manga, title list, online comic">
 
     <!-- Open Graph Metadata -->
     <meta property="og:type" content="website">
-    <meta property="og:title" content="{{title}}">
-    <meta property="og:description" content="{{summary}}">
-    <meta property="og:image" content="thumbnail.jpg">
+    <meta property="og:title" content="Webtoons Title Listing">
+    <meta property="og:description" content="A list of all downloaded webtoons titles.">
+    <meta property="og:image" content="webtoons.png">
 
     <!-- Twitter Card Metadata -->
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="{{title}}">
-    <meta name="twitter:description" content="{{summary}}">
-    <meta name="twitter:image" content="thumbnail.jpg">
-    <link rel="icon" type="image/jpeg" href="thumbnail.jpg">
+    <meta name="twitter:title" content="Webtoons Title Listing">
+    <meta name="twitter:description" content="A list of all downloaded webtoons titles.">
+    <meta name="twitter:image" content="webtoons.png">
+    <link rel="icon" type="image/jpeg" href="webtoons.png">
     <script type="application/json" id="metadata">{{metadata}}</script>
     <style>
         body {
@@ -53,13 +52,6 @@
             margin-bottom: 25px;
         }
 
-        #thumbnail {
-            width: 150px;
-            height: 150px;
-            border-radius: 50%;
-            margin-right: 20px;
-        }
-
         #info {
             display: flex;
             flex-direction: column;
@@ -72,30 +64,13 @@
             margin: 0;
         }
 
-        #title-list-banner {
-            text-align: center;
-            margin-top: 0;
-            margin-bottom: 10px;
-            margin-left: 0;
-            margin-right: 0;
-            padding: 0;
-            width: 100%;
-        }
-
-        #title-list-button {
-            color: white;
-            text-decoration: underline;
-            cursor: pointer;
-            width: 100%;
-        }
-
-        #chapters {
+        #titles {
             display: flex;
             flex-direction: column;
             align-items: center;
         }
 
-        .chapter {
+        .title {
             width: 100%;
             border-top: 1px solid #646464;
             border-bottom: 1px solid #646464;
@@ -105,7 +80,7 @@
             cursor: pointer;
         }
 
-        .chapter-image {
+        .title-image {
             width: 100px;
             height: 100px;
             margin: 0;
@@ -115,7 +90,7 @@
             margin-right: 10px;
         }
 
-        .chapter-text {
+        .title-text {
             width: 100%;
             color: white;
             text-decoration: none;
@@ -133,21 +108,13 @@
 <body>
     <div id="center">
         <div id="content">
-            <div id="title-list-banner">
-                <a id="title-list-button" href="../index.html">&lt;&#x2013; Back To All Titles</a>
-            </div>
             <div id="head">
-                <div>
-                    <img src="thumbnail.jpg" id="thumbnail">
-                </div>
                 <div id="info">
-                    <h1 id="title">{{title}}</h1>
-                    <span class="gray">{{author}}</span>
-                    <p>{{summary}}</p>
+                    <h1 id="title">All Titles</h1>
                 </div>
             </div>
-            <div id="chapters">
-{{chapters}}
+            <div id="titles">
+{{titles}}
             </div>
         </div>
     </div>
