@@ -242,7 +242,7 @@ def makeTitlesList():
     i = 0
     for file in os.listdir(LIBRARY_DIR):
         if os.path.isdir(f'{LIBRARY_DIR}/{file}'):
-            f = open(f'{LIBRARY_DIR}/{file}/index.html', 'r')
+            f = open(f'{LIBRARY_DIR}/{file}/index.html', 'r', encoding='utf-8')
             html = BeautifulSoup(f.read(), 'html.parser')
             f.close()
             j = json.loads(html.find('script', id='metadata').contents[0])
@@ -275,7 +275,7 @@ links = []
 if args.command[0] == 'update-all':
     for file in os.listdir(LIBRARY_DIR):
         if os.path.isdir(f'{LIBRARY_DIR}/{file}'):
-            f = open(f'{LIBRARY_DIR}/{file}/index.html', 'r')
+            f = open(f'{LIBRARY_DIR}/{file}/index.html', 'r', encoding='utf-8')
             html = BeautifulSoup(f.read(), 'html.parser')
             f.close()
             j = json.loads(html.find('script', id='metadata').contents[0])
