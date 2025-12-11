@@ -138,7 +138,6 @@ def downloadComic(link):
         chapter_index += 1
         if os.path.exists(f'{LIBRARY_DIR}/{make_safe_filename_windows(title)}/{chapter_index}.html'):
             print(f'Chapter {chapter_index}: {chapter["title"]} already downloaded, skipping redownload...')
-            print('')
         else:
             print(f'Downloading chapter {chapter_index}: {chapter["title"]}')
             os.makedirs(f'{LIBRARY_DIR}/{make_safe_filename_windows(title)}/chapter_images/{chapter_index}', exist_ok=True)
@@ -168,7 +167,7 @@ def downloadComic(link):
                         time.sleep(1)
                         get(url, index)
                 running += 1
-                threading.Thread(target=get, args=(str(img['data-url']).split('?')[0], int(i))).start()
+                threading.Thread(target=get, args=(str(img['data-url']).split('?')[0], int(i)), daemon=True).start()
                 while running >= args.threads:
                     time.sleep(0.01)
             while running > 0:
@@ -206,7 +205,24 @@ def downloadComic(link):
         f.write(html)
         f.close()
 
+    print('')
+
     print('Writing title/chapter list page...')
+
+    # Try to find missing chapters
+    i = len(chapters)+1
+    while True:
+        if os.path.exists(f'{LIBRARY_DIR}/{make_safe_filename_windows(title)}/{i}.html'):
+            print(f'W: Chapter {i} does not appear to exist on Webtoons. Was the comic converted to paid only?', file=sys.stderr)
+            # Fallback to embedded metadata
+            f = open(f'{LIBRARY_DIR}/{make_safe_filename_windows(title)}/{i}.html', 'r', encoding='utf-8')
+            html = BeautifulSoup(f.read(), 'html.parser')
+            f.close()
+            j = json.loads(html.find('script', id='metadata').contents[0])
+            chapters.append(j)
+            i += 1
+        else:
+            break
 
     f = open(f'{SCRIPT_DIR}/htmls/title.html', 'r', encoding='utf-8')
     html = f.read()
