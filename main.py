@@ -14,7 +14,7 @@ from PIL import Image
 
 args = argparse.ArgumentParser()
 args.description = 'Download and convert a whole webtoon series to html files.'
-args.add_argument('command', help='Link(s) to webtoon comic(s) to download. (This should be the link to chapter list.) to download OR a command to run. Available commands: update-all (updates all comics in the library.)', nargs='+', type=str)
+args.add_argument('command', help='Link(s) to webtoon comic(s) to download. (This should be the link to chapter list.) to download OR a command to run. Available commands: update-all (updates all comics in the library.), update-htmls (updates all html files in the library to the latest version.)', nargs='+', type=str)
 args.add_argument('-p', '--proxy', help='Proxy to use', type=str, default="")
 args.add_argument('-r', '--max-retries', help='How many times to retry failed downloads. (Default: 10)', type=int, default=10)
 args.add_argument('-t', '--threads', help='How many threads to use when downloading. (Default: 10)', type=int, default=10)
@@ -30,6 +30,49 @@ if not os.path.exists(LIBRARY_DIR):
 proxies = {}
 if args.proxy:
     proxies = {'http': args.proxy, 'https': args.proxy}
+
+class Encoder():
+    def __init__(self):
+        f = open(f'{SCRIPT_DIR}/htmls/chapter.html', 'r', encoding='utf-8')
+        self.chapter_template = f.read()
+        f.close()
+        f = open(f'{SCRIPT_DIR}/htmls/title.html', 'r', encoding='utf-8')
+        self.title_template = f.read()
+        f.close()
+    def encode_chapter(self, meta, nimages, nchapters=0):
+        f = open(f'{SCRIPT_DIR}/htmls/chapter.html', 'r', encoding='utf-8')
+        html = f.read()
+        f.close()
+        html = html.replace('{{title}}', f'{meta["comic_title"]} - Chapter {meta["chapter_number"]}: {meta["title"]}')
+        html = html.replace('{{main_title}}', f'<a id="title-link" href="index.html">{meta["comic_title"]}</a> &#x2013; Chapter {meta["chapter_number"]}: {meta["title"]}')
+        html = html.replace('{{author}}', meta['comic_author'])
+        html = html.replace('{{thumbnail}}', f'chapter_images/{meta["chapter_number"]}/thumbnail.jpg')
+        html = html.replace('{{metadata}}', json.dumps(meta))
+        content = ''
+        for i in range(1, nimages+1):
+            content += f'<img src="chapter_images/{meta["chapter_number"]}/{i}.jpg" class="img">\n'
+        html = html.replace('{{content}}', content)
+        if meta['chapter_number'] > 1:
+            html = html.replace('{{prev}}', f'<a href="{meta["chapter_number"]-1}.html">&lt;&#x2013; Previous Chapter</a>')
+        else:
+            html = html.replace('{{prev}}', '')
+        if meta['chapter_number'] < nchapters:
+            html = html.replace('{{next}}', f'<a href="{meta["chapter_number"]+1}.html">Next Chapter &#x2013;&gt;</a>')
+        else:
+            html = html.replace('{{next}}', '')
+        return html
+    def encode_title(self, meta, chapters):
+        html = str(self.title_template) # copy
+        html = html.replace('{{title}}', meta['title'])
+        html = html.replace('{{author}}', meta['author'])
+        html = html.replace('{{metadata}}', json.dumps(meta))
+        html = html.replace('{{summary}}', meta['summary'])
+        chapters_html = ''
+        for i in range(1, len(chapters)+1):
+            chapters_html += f'<div class="chapter" onclick="window.location.href=\'{i}.html\'" id="chapter-{i}"><img class="chapter-image" src="chapter_images/{i}/thumbnail.jpg"><a href="{i}.html" class="chapter-text"><p>Chapter {i}: {chapters[i-1]["title"]}</p><p class="gray">{chapters[i-1]["date"]}</p></a></div>\n'
+        html = html.replace('{{chapters}}', chapters_html)
+        return html
+encoder = Encoder()
 
 def make_safe_filename_windows(filename):
     illegal_chars = r'<>:"/\|?*'
@@ -173,37 +216,18 @@ def downloadComic(link):
             while running > 0:
                 time.sleep(0.01)
             print('\n')
-        # Update the html anyways
-        f = open(f'{SCRIPT_DIR}/htmls/chapter.html', 'r', encoding='utf-8')
-        html = f.read()
-        f.close()
-        html = html.replace('{{title}}', f'{title} - Chapter {chapter_index}: {chapter["title"]}')
-        html = html.replace('{{main_title}}', f'<a id="title-link" href="index.html">{title}</a> &#x2013; Chapter {chapter_index}: {chapter["title"]}')
-        html = html.replace('{{author}}', author)
-        html = html.replace('{{thumbnail}}', f'chapter_images/{chapter_index}/thumbnail.jpg')
-        meta = chapter.copy()
-        del meta['thumbnail']
-        meta['chapter_number'] = chapter_index
-        meta['comic_link'] = link
-        meta['comic_title'] = title
-        meta['comic_author'] = author
-        meta['comic_genre'] = genre
-        html = html.replace('{{metadata}}', json.dumps(meta))
-        content = ''
-        for i in range(1, len(os.listdir(f'{LIBRARY_DIR}/{make_safe_filename_windows(title)}/chapter_images/{chapter_index}'))): # No need to add 1 to the length because of the thumbnail file
-            content += f'<img src="chapter_images/{chapter_index}/{i}.jpg" class="img">\n'
-        html = html.replace('{{content}}', content)
-        if chapter_index > 1:
-            html = html.replace('{{prev}}', f'<a href="{chapter_index-1}.html">&lt;&#x2013; Previous Chapter</a>')
-        else:
-            html = html.replace('{{prev}}', '')
-        if chapter_index < len(chapters):
-            html = html.replace('{{next}}', f'<a href="{chapter_index+1}.html">Next Chapter &#x2013;&gt;</a>')
-        else:
-            html = html.replace('{{next}}', '')
-        f = open(f'{LIBRARY_DIR}/{make_safe_filename_windows(title)}/{chapter_index}.html', 'w', encoding='utf-8')
-        f.write(html)
-        f.close()
+
+            meta = chapter.copy()
+            del meta['thumbnail']
+            meta['chapter_number'] = chapter_index
+            meta['comic_link'] = link
+            meta['comic_title'] = title
+            meta['comic_author'] = author
+            meta['comic_genre'] = genre
+            html = encoder.encode_chapter(meta, len(os.listdir(f'{LIBRARY_DIR}/{make_safe_filename_windows(title)}/chapter_images/{chapter_index}'))-1, len(chapters))
+            f = open(f'{LIBRARY_DIR}/{make_safe_filename_windows(title)}/{chapter_index}.html', 'w', encoding='utf-8')
+            f.write(html)
+            f.close()
 
     print('')
 
@@ -224,12 +248,7 @@ def downloadComic(link):
         else:
             break
 
-    f = open(f'{SCRIPT_DIR}/htmls/title.html', 'r', encoding='utf-8')
-    html = f.read()
-    f.close()
-    html = html.replace('{{title}}', title)
-    html = html.replace('{{author}}', author)
-    html = html.replace('{{metadata}}', json.dumps({
+    meta = {
         'link': link,
         'title': title,
         'genre': genre,
@@ -240,12 +259,8 @@ def downloadComic(link):
         'subscribers': subscribers,
         'rating': rating,
         'chapters': len(chapters)
-    }))
-    html = html.replace('{{summary}}', summary)
-    chapters_html = ''
-    for i in range(1, len(chapters)+1):
-        chapters_html += f'<div class="chapter" onclick="window.location.href=\'{i}.html\'" id="chapter-{i}"><img class="chapter-image" src="chapter_images/{i}/thumbnail.jpg"><a href="{i}.html" class="chapter-text"><p>Chapter {i}: {chapters[i-1]["title"]}</p><p class="gray">{chapters[i-1]["date"]}</p></a></div>\n'
-    html = html.replace('{{chapters}}', chapters_html)
+    }
+    html = encoder.encode_title(meta, chapters)
     f = open(f'{LIBRARY_DIR}/{make_safe_filename_windows(title)}/index.html', 'w', encoding='utf-8')
     f.write(html)
     f.close()
@@ -257,7 +272,7 @@ def makeTitlesList():
     titles_meta = []
     i = 0
     for file in os.listdir(LIBRARY_DIR):
-        if os.path.isdir(f'{LIBRARY_DIR}/{file}'):
+        if os.path.exists(f'{LIBRARY_DIR}/{file}/index.html'):
             f = open(f'{LIBRARY_DIR}/{file}/index.html', 'r', encoding='utf-8')
             html = BeautifulSoup(f.read(), 'html.parser')
             f.close()
@@ -287,6 +302,48 @@ def makeTitlesList():
         if os.path.isfile(f'{SCRIPT_DIR}/htmls/PWA/{f}'):
             shutil.copy(f'{SCRIPT_DIR}/htmls/PWA/{f}', f'{LIBRARY_DIR}/{f}')
 
+def updateHTMLs():
+    print('Starting update of all HTML files...\n')
+    for file in os.listdir(LIBRARY_DIR):
+        if os.path.exists(f'{LIBRARY_DIR}/{file}/index.html'):
+            f = open(f'{LIBRARY_DIR}/{file}/index.html', 'r', encoding='utf-8')
+            html = BeautifulSoup(f.read(), 'html.parser')
+            f.close()
+            meta = json.loads(html.find('script', id='metadata').contents[0])
+            print('Updating title "' + meta['title'] + '"...')
+            chapters = []
+            i = 1
+            while True:
+                if os.path.exists(f'{LIBRARY_DIR}/{file}/{i}.html'):
+                    print('\rLoad chapter ' + str(i), end='')
+                    f = open(f'{LIBRARY_DIR}/{file}/{i}.html', 'r', encoding='utf-8')
+                    html = BeautifulSoup(f.read(), 'html.parser')
+                    f.close()
+                    j = json.loads(html.find('script', id='metadata').contents[0])
+                    chapters.append(j)
+                    i += 1
+                else:
+                    break
+            print('\r' + ' ' * 50, end='')
+            
+            chapter_index = 1
+            for chapter in chapters:
+                print('\rUpdate chapter ' + str(chapter_index) + '/' + str(len(chapters)), end='')
+                html = encoder.encode_chapter(chapter, len(os.listdir(f'{LIBRARY_DIR}/{file}/chapter_images/{chapter_index}'))-1, len(chapters))
+                f = open(f'{LIBRARY_DIR}/{file}/{chapter_index}.html', 'w', encoding='utf-8')
+                f.write(html)
+                f.close()
+                chapter_index += 1
+            print('\r' + ' ' * 50, end='')
+
+            html = encoder.encode_title(meta, chapters)
+            f = open(f'{LIBRARY_DIR}/{file}/index.html', 'w', encoding='utf-8')
+            f.write(html)
+            f.close()
+
+            print('\rDone!\n')
+
+
 links = []
 if args.command[0] == 'update-all':
     for file in os.listdir(LIBRARY_DIR):
@@ -296,14 +353,32 @@ if args.command[0] == 'update-all':
             f.close()
             j = json.loads(html.find('script', id='metadata').contents[0])
             links.append(j['link'])
+elif args.command[0] == 'update-htmls':
+    updateHTMLs()
+    print('Updating title list...')
+    makeTitlesList()
+    print('Done!')
+    sys.exit(0)
 else:
     for link in args.command:
         for l in link.split(','):
-            links.append(l)
+            l = l.strip()
+            if len(l) > 0:
+                links.append(l) 
 tries = 0
+if len(links) == 0:
+    print('No links provided to download!', file=sys.stderr)
+    sys.exit(1)
 for link in links:
+    tries = 0
     if 'm.webtoons.com' in link:
-        raise Exception('Mobile version of webtoon links are not supported!')
+        print('Mobile version of webtoon links are not supported!', file=sys.stderr)
+        sys.exit(1)
+    if link.startswith('http://'):
+        link = link.replace('http://', 'https://')
+    if 'https://webtoons.com' not in link and not 'https://www.webtoons.com' in link:
+        print('Invalid webtoon link "' + link + '"!', file=sys.stderr)
+        sys.exit(1)
     def f():
         global tries
         try:

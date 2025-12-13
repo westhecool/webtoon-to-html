@@ -106,6 +106,11 @@
             padding: 0;
         }
     </style>
+    <script>history.scrollRestoration = "manual"</script>
+    <script>
+        let metadata = JSON.parse(document.getElementById('metadata').textContent);
+        metadata.comic_id = [...new TextEncoder().encode(metadata.comic_title)].map(b => b.toString(16).padStart(2, '0')).join(''); // comic title in hex
+    </script>
 </head>
 
 <body class="dark-mode">
@@ -119,20 +124,20 @@
                     <option selected value="50%">50%</option>
                     <option value="25%">25%</option>
                 </select>
-                <input type="checkbox" id="dark-mode-toggle" checked><label id="dark-mode-toggle-label" for="dark-mode-toggle" >Dark Mode</label>
+                <input type="checkbox" id="dark-mode-toggle" checked><label id="dark-mode-toggle-label" for="dark-mode-toggle">Dark Mode</label>
                 <span>{{main_title}}</span>
                 <script>
                     const toggleSwitch = document.getElementById('dark-mode-toggle');
                     toggleSwitch.onchange = function () {
                         if (toggleSwitch.checked) {
                             document.body.classList.add('dark-mode');
-                            localStorage.setItem('reader_dark_mode', 'true');
+                            localStorage.setItem('wth_reader_dark_mode', 'true');
                         } else {
                             document.body.classList.remove('dark-mode');
-                            localStorage.setItem('reader_dark_mode', 'false');
+                            localStorage.setItem('wth_reader_dark_mode', 'false');
                         }
                     }
-                    if (localStorage.reader_dark_mode === 'false') {
+                    if (localStorage.wth_reader_dark_mode === 'false') {
                         document.body.classList.remove('dark-mode');
                         toggleSwitch.checked = false;
                     }
@@ -140,11 +145,11 @@
                     selectElement.onchange = function () {
                         const selectedValue = selectElement.value;
                         document.getElementById('content').style.maxWidth = selectedValue;
-                        localStorage.setItem('reader_width', selectedValue);
+                        localStorage.setItem('wth_reader_width', selectedValue);
                     }
-                    if (localStorage.reader_width) {
+                    if (localStorage.wth_reader_width) {
                         document.getElementById('content').style.maxWidth = localStorage.reader_width;
-                        selectElement.value = localStorage.reader_width;
+                        selectElement.value = localStorage.wth_reader_width;
                     }
                 </script>
             </div>
@@ -161,8 +166,41 @@
         center.onclick = function (event) {
             if (event.target === center) {
                 window.scroll({
-                    top: window.scrollY + (event.x > (window.innerWidth / 2) ? window.innerHeight : -(window.innerHeight))
+                    top: window.scrollY + (event.y > (window.innerHeight / 2) ? window.innerHeight : -(window.innerHeight))
                 });
+            }
+        }
+    </script>
+    <script>
+        let lastSaveProgress = 0;
+        function saveReadProgress() {
+            if (performance.now() - lastSaveProgress >= 100) {
+                lastSaveProgress = performance.now();
+                localStorage.setItem(`wth_reader_progress_${metadata.comic_id}`, JSON.stringify({
+                    scrollY: window.scrollY,
+                    scrollHeight: document.documentElement.scrollHeight,
+                    chapter: metadata.chapter_number,
+                    chapter_title: metadata.title,
+                    comic: metadata.comic_title
+                }));
+            }
+        }
+        document.body.onload = function () {
+            let progress = localStorage.getItem(`wth_reader_progress_${metadata.comic_id}`);
+            if (progress) {
+                progress = JSON.parse(progress);
+                if (progress.chapter === metadata.chapter_number) {
+                    window.scroll({
+                        top: progress.scrollY
+                    });
+                }
+            }
+            if (!progress || progress.chapter !== metadata.chapter_number) {
+                lastSaveProgress = -Infinity;
+                saveReadProgress();
+            }
+            document.body.onscroll = function () {
+                saveReadProgress();
             }
         }
     </script>

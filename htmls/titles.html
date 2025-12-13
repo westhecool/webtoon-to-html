@@ -50,7 +50,7 @@
         #head {
             display: flex;
             justify-content: space-around;
-            margin-bottom: 25px;
+            margin-bottom: 15px;
         }
 
         #info {
@@ -65,7 +65,8 @@
             margin: 0;
         }
 
-        #titles {
+        #titles,
+        #last-read {
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -100,6 +101,31 @@
             align-items: center;
         }
 
+        .last-read-split-title {
+            display: flex;
+            flex-direction: column;
+            align-items: left;
+        }
+
+        .last-read-split-title p {
+            margin: 0;
+            padding: 0;
+        }
+
+        #sections {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 15px;
+        }
+
+        #sections a {
+            font-weight: bold;
+            text-decoration: underline;
+            text-decoration-skip: ink;
+            cursor: pointer;
+            margin-right: 10px;
+        }
+
         .gray {
             color: #646464;
         }
@@ -114,12 +140,51 @@
                     <h1 id="title">All Titles</h1>
                 </div>
             </div>
+            <div id="sections">
+                <a style="color: white;" onclick="page(0)" id="section-button-titles">Titles</a>
+                <a style="color: #868686;" onclick="page(1)" id="section-button-last-read">Last Read</a>
+            </div>
             <div id="titles">
 {{titles}}
             </div>
+            <div id="last-read" style="display: none;"></div>
         </div>
     </div>
     </div>
+    <script>
+        function sanitizeFileName(filename) {
+            return filename.replace(/[<>:"/\\|?*]/g, '');
+        }
+        function page(page) {
+            switch (page) {
+                case 0:
+                    document.getElementById('last-read').style.display = 'none';
+                    document.getElementById('section-button-last-read').style.color = '#868686';
+                    document.getElementById('section-button-titles').style.color = 'white';
+                    document.getElementById('titles').style.display = 'flex';
+                    document.getElementById('title').textContent = 'All Titles';
+                    break;
+                case 1:
+                    document.getElementById('titles').style.display = 'none';
+                    document.getElementById('section-button-titles').style.color = '#868686';
+                    document.getElementById('section-button-last-read').style.color = 'white';
+                    document.getElementById('last-read').style.display = 'flex';
+                    document.getElementById('title').textContent = 'Last Read';
+                    break;
+                default:
+                    break;
+            }
+        }
+        let ii = 0;
+        for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            if (key.startsWith('wth_reader_progress_')) {
+                ii++;
+                let data = JSON.parse(localStorage.getItem(key));
+                document.getElementById('last-read').innerHTML += `<div class="title" onclick="window.location.href='${encodeURI(sanitizeFileName(data.comic))}/${data.chapter}.html'" id="last-read-${ii}"><img class="title-image" src="${encodeURI(sanitizeFileName(data.comic))}/thumbnail.jpg"><a href="${encodeURI(sanitizeFileName(data.comic))}/${data.chapter}.html" class="title-text"><div class="last-read-split-title"><p>${data.comic}</p><p class="gray">Chapter ${data.chapter}: ${data.chapter_title}</p></div><p class="gray">${Math.floor((data.scrollY / data.scrollHeight) * 100)}%</p></a></div>\n`;
+            }
+        }
+    </script>
     <script>
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.register('service-worker.js');
