@@ -271,7 +271,7 @@ def makeTitlesList():
     titles = ''
     titles_meta = []
     i = 0
-    for file in os.listdir(LIBRARY_DIR):
+    for file in sorted(os.listdir(LIBRARY_DIR)):
         if os.path.exists(f'{LIBRARY_DIR}/{file}/index.html'):
             f = open(f'{LIBRARY_DIR}/{file}/index.html', 'r', encoding='utf-8')
             html = BeautifulSoup(f.read(), 'html.parser')
