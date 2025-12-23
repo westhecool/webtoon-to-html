@@ -75,8 +75,16 @@ class Encoder():
         return html
 encoder = Encoder()
 
-def days_ago(date_str):
-    return (datetime.today() - datetime.strptime(date_str, "%b %d, %Y")).days
+def days_ago(date_str): # Why do they use 2 different date formats???
+    date = None
+    try:
+        date = datetime.strptime(date_str, "%b %d, %Y")
+    except:
+        try:
+            date = datetime.strptime(date_str, "%d.%m.%Y")
+        except:
+            raise Exception(f'Failed to parse date: {date_str}')
+    return (datetime.today() - date).days
 
 def make_safe_filename_windows(filename):
     illegal_chars = r'<>:"/\|?*'
