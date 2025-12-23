@@ -10,11 +10,12 @@ import re
 import argparse
 import threading
 import io
+from datetime import datetime
 from PIL import Image
 
 args = argparse.ArgumentParser()
 args.description = 'Download and convert a whole webtoon series to html files.'
-args.add_argument('command', help='Link(s) to webtoon comic(s) to download. (This should be the link to chapter list.) to download OR a command to run. Available commands: update-all (updates all comics in the library.), update-htmls (updates all html files in the library to the latest version.)', nargs='+', type=str)
+args.add_argument('command', help='Link(s) to webtoon comic(s) to download. (This should be the link to chapter list.) to download OR a command to run. Available commands: update-all (updates all comics in the library.), update-recent (updates comics that have had chapters published in the last 30 days.), update-htmls (updates all html files in the library to the latest version.)', nargs='+', type=str)
 args.add_argument('-p', '--proxy', help='Proxy to use', type=str, default="")
 args.add_argument('-r', '--max-retries', help='How many times to retry failed downloads. (Default: 10)', type=int, default=10)
 args.add_argument('-t', '--threads', help='How many threads to use when downloading. (Default: 10)', type=int, default=10)
@@ -73,6 +74,9 @@ class Encoder():
         html = html.replace('{{chapters}}', chapters_html)
         return html
 encoder = Encoder()
+
+def days_ago(date_str):
+    return (datetime.today() - datetime.strptime(date_str, "%b %d, %Y")).days
 
 def make_safe_filename_windows(filename):
     illegal_chars = r'<>:"/\|?*'
@@ -345,14 +349,22 @@ def updateHTMLs():
 
 
 links = []
-if args.command[0] == 'update-all':
+if args.command[0] == 'update-all' or args.command[0] == 'update-recent':
     for file in os.listdir(LIBRARY_DIR):
         if os.path.isdir(f'{LIBRARY_DIR}/{file}'):
             f = open(f'{LIBRARY_DIR}/{file}/index.html', 'r', encoding='utf-8')
             html = BeautifulSoup(f.read(), 'html.parser')
             f.close()
             j = json.loads(html.find('script', id='metadata').contents[0])
-            links.append(j['link'])
+            if args.command[0] == 'update-recent':
+                f2 = open(f'{LIBRARY_DIR}/{file}/{int(j["chapters"])}.html', 'r', encoding='utf-8')
+                html2 = BeautifulSoup(f2.read(), 'html.parser')
+                f2.close()
+                j2 = json.loads(html2.find('script', id='metadata').contents[0])
+                if days_ago(j2['date']) <= 30: # Only update if it's been less than 30 days since the last chapter
+                    links.append(j['link'])
+            else:
+                links.append(j['link'])
 elif args.command[0] == 'update-htmls':
     updateHTMLs()
     print('Updating title list...')
