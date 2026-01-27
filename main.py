@@ -172,6 +172,8 @@ def downloadComic(link):
             ctitle = chapter.find(class_='subj').text.strip()
             if ctitle.endswith('BGM'): # This happens if the chapter includes background music
                 ctitle = ctitle[:-3].strip()
+            if ctitle.endswith('UP'): # This happens if the chapter is new
+                ctitle = ctitle[:-2].strip()
             chapters.append({
                 'title': ctitle, 
                 'link': chapter.find('a')['href'],
@@ -332,6 +334,11 @@ def updateHTMLs():
                     html = BeautifulSoup(f.read(), 'html.parser')
                     f.close()
                     j = json.loads(html.find('script', id='metadata').contents[0])
+                    # Apply chapter title fixes
+                    if j['title'].endswith('BGM'): # This happens if the chapter includes background music
+                        j['title'] = j['title'][:-3].strip()
+                    if j['title'].endswith('UP'): # This happens if the chapter is new
+                        j['title'] = j['title'][:-2].strip()
                     chapters.append(j)
                     i += 1
                 else:
