@@ -1,4 +1,4 @@
-# Webtoon to .epub converter
+# Webtoon downloader
 A program to download/archive down a whole webtoon comics into offline html files.<br>
 Note: **!!This could break at any time because it relies on the current layout of Webtoon's website!!**
 
