@@ -291,7 +291,7 @@ def makeTitlesList():
             html = BeautifulSoup(f.read(), 'html.parser')
             f.close()
             j = json.loads(html.find('script', id='metadata').contents[0])
-            titles += f'<div class="title" onclick="window.location.href=\'{urllib.parse.quote(file)}/index.html\'" id="title-{i}"><img class="title-image" src="{urllib.parse.quote(file)}/thumbnail.jpg"><a href="{urllib.parse.quote(file)}/index.html" class="title-text"><p>{j["title"]}</p><p class="gray">{j["author"]}</p></a></div>\n'
+            titles += f'<div class="title" onclick="window.location.href=\'{urllib.parse.quote(file)}/index.html\'" id="title-{i}"><img class="title-image" loading="lazy" src="{urllib.parse.quote(file)}/thumbnail.jpg"><a href="{urllib.parse.quote(file)}/index.html" class="title-text"><p>{j["title"]}</p><p class="gray">{j["author"]}</p></a></div>\n'
             titles_meta.append({
                 'title': j['title'],
                 'author': j['author'],
@@ -304,7 +304,7 @@ def makeTitlesList():
     f = open(f'{SCRIPT_DIR}/htmls/titles.html', 'r', encoding='utf-8')
     html = f.read()
     f.close()
-    html = html.replace('{{metadata}}', titles)
+    html = html.replace('{{metadata}}', json.dumps(titles_meta))
     html = html.replace('{{titles}}', titles)
     f = open(f'{LIBRARY_DIR}/index.html', 'w', encoding='utf-8')
     f.write(html)
