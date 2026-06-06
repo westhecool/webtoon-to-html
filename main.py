@@ -51,7 +51,7 @@ class Encoder():
         html = html.replace('{{metadata}}', json.dumps(meta))
         content = ''
         for i in range(1, nimages+1):
-            content += f'<img src="chapter_images/{meta["chapter_number"]}/{i}.jpg" class="img">\n'
+            content += f'<img loading="lazy" src="chapter_images/{meta["chapter_number"]}/{i}.jpg" class="img">\n'
         html = html.replace('{{content}}', content)
         if meta['chapter_number'] > 1:
             html = html.replace('{{prev}}', f'<a href="{meta["chapter_number"]-1}.html">&lt;&#x2013; Previous Chapter</a>')
@@ -70,7 +70,7 @@ class Encoder():
         html = html.replace('{{summary}}', meta['summary'])
         chapters_html = ''
         for i in range(1, len(chapters)+1):
-            chapters_html += f'<div class="chapter" onclick="window.location.href=\'{i}.html\'" id="chapter-{i}"><img class="chapter-image" src="chapter_images/{i}/thumbnail.jpg"><a href="{i}.html" class="chapter-text"><p>Chapter {i}: {chapters[i-1]["title"]}</p><p class="gray">{chapters[i-1]["date"]}</p></a></div>\n'
+            chapters_html += f'<div class="chapter" onclick="window.location.href=\'{i}.html\'" id="chapter-{i}"><img class="chapter-image" loading="lazy" src="chapter_images/{i}/thumbnail.jpg"><a href="{i}.html" class="chapter-text"><p>Chapter {i}: {chapters[i-1]["title"]}</p><p class="gray">{chapters[i-1]["date"]}</p></a></div>\n'
         html = html.replace('{{chapters}}', chapters_html)
         return html
 encoder = Encoder()

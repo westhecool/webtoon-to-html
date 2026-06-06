@@ -181,7 +181,7 @@
             if (key.startsWith('wth_reader_progress_')) {
                 ii++;
                 let data = JSON.parse(localStorage.getItem(key));
-                document.getElementById('last-read').innerHTML += `<div class="title" onclick="window.location.href='${encodeURI(sanitizeFileName(data.comic))}/${data.chapter}.html'" id="last-read-${ii}"><img class="title-image" src="${encodeURI(sanitizeFileName(data.comic))}/thumbnail.jpg"><a href="${encodeURI(sanitizeFileName(data.comic))}/${data.chapter}.html" class="title-text"><div class="last-read-split-title"><p>${data.comic}</p><p class="gray">Chapter ${data.chapter}: ${data.chapter_title}</p></div><p class="gray">${Math.floor((data.scrollY / data.scrollHeight) * 100)}%</p></a></div>\n`;
+                document.getElementById('last-read').innerHTML += `<div class="title" onclick="window.location.href='${encodeURI(sanitizeFileName(data.comic))}/${data.chapter}.html'" id="last-read-${ii}"><img class="title-image" loading="lazy" src="${encodeURI(sanitizeFileName(data.comic))}/thumbnail.jpg"><a href="${encodeURI(sanitizeFileName(data.comic))}/${data.chapter}.html" class="title-text"><div class="last-read-split-title"><p>${data.comic}</p><p class="gray">Chapter ${data.chapter}: ${data.chapter_title}</p></div><p class="gray">${Math.floor((data.scrollY / data.scrollHeight) * 100)}%</p></a></div>\n`;
             }
         }
     </script>
