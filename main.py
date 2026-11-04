@@ -17,6 +17,7 @@ args = argparse.ArgumentParser()
 args.description = 'Download and convert a whole webtoon series to html files.'
 args.add_argument('command', help='Link(s) to webtoon comic(s) to download. (This should be the link to chapter list.) to download OR a command to run. Available commands: update-all (updates all comics in the library.), update-recent (updates comics that have had chapters published in the last 30 days.), update-htmls (updates all html files in the library to the latest version.)', nargs='+', type=str)
 args.add_argument('-p', '--proxy', help='Proxy to use', type=str, default="")
+args.add_argument('-s', '--skip-paid', help='Do not download paid only comics. (i.e., the first few episodes are free but the majority are paid.) (Default: false)', default=False, action='store_true')
 args.add_argument('-r', '--max-retries', help='How many times to retry failed downloads. (Default: 10)', type=int, default=10)
 args.add_argument('-t', '--threads', help='How many threads to use when downloading. (Default: 10)', type=int, default=10)
 args.add_argument('-l', '--library', help='Directory to store downloaded comics in. (Default: ./library)', type=str, default="./library")
@@ -136,6 +137,11 @@ def downloadComic(link):
     print(f'Title: {title}')
     print(f'Genre: {genre}')
     print(f'Author: {author}')
+
+    day_status = soup.find(class_='day_info')
+    if args.skip_paid and day_status and (day_status.text.strip().upper() == 'COMPLETED') and (soup.find(class_='detail_install_app') is not None):
+        print(f'Comic is paid only. Skipping...\n')
+        return
 
     os.makedirs(f'{LIBRARY_DIR}/{make_safe_filename_windows(title)}', exist_ok=True)
 
